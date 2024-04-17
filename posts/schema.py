@@ -35,6 +35,9 @@ class Query(graphene.ObjectType):
 class PostInput(graphene.InputObjectType):
     title = graphene.String(required=True)
     description = graphene.String(required=True)
+class PostUpdateInput(graphene.InputObjectType):
+    title = graphene.String(required=True)
+    description = graphene.String(required=False)
 
 class CreatePost(graphene.Mutation):
     # define the input paramaters for mutation
@@ -56,7 +59,7 @@ class UpdatePost(graphene.Mutation):
     # define the input paramaters for mutation
     class Arguments:
         id = graphene.ID()
-        post_data = PostInput(required=True)
+        post_data = PostUpdateInput(required=False)
     # define the response of the mutation
     updated = graphene.Boolean()
     update_post = graphene.Field(PostsType)
@@ -65,8 +68,13 @@ class UpdatePost(graphene.Mutation):
     @classmethod
     def mutate(cls, root, info, id, post_data=None):
         update_post = Posts.objects.get(id=id)
-        update_post.title = post_data.title
-        update_post.description=post_data.description
+        
+        # Check if post_data has description before updating
+        if hasattr(post_data, 'description') and post_data.description:
+            update_post.description = post_data.description
+        if hasattr(post_data, 'title') and post_data.description:
+            update_post.title = post_data.title
+            
         update_post.save()
         updated = True
         return UpdatePost(update_post=update_post, updated=updated)
